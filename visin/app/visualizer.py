@@ -21,14 +21,20 @@ class Visualizer:
         while not glfw.window_should_close(self.window):
             glfw.poll_events()
             self.imgui_glfw.process_inputs()
-            imgui.new_frame()
-            imgui.show_demo_window()
+
             self.ctx.clear(0.3, 0.3, 0.3)
+
+            imgui.new_frame()
+            self._render_ui()
             imgui.render()
+
             self.imgui_glfw.render(imgui.get_draw_data())
             glfw.swap_buffers(self.window)
 
         self._shutdown()
+
+    def _render_ui(self):
+        imgui.show_demo_window()
 
     def _init_imgui(self):
         imgui.create_context()

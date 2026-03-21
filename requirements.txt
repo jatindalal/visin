@@ -1,0 +1,11 @@
+# Core windowing + GL
+glfw>=2.7.0
+PyOpenGL>=3.1.7
+moderngl>=5.10.0
+
+# ImGui (includes ImPlot, ImGuizmo, ImNodes)
+imgui-bundle>=1.5.0
+
+# Data
+numpy>=1.26.0
+

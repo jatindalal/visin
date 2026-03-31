@@ -1,8 +1,11 @@
 import glfw
 import moderngl
+import numpy as np
 from imgui_bundle import imgui
 from imgui_bundle.python_backends.glfw_backend import GlfwRenderer
 
+from visin.core.math import MatrixUtils
+from visin.render.pointcloud_renderer import PointCloudRenderer
 
 
 class Visualizer:
@@ -16,20 +19,23 @@ class Visualizer:
         self.imgui_io = None
         self.imgui_glfw = None
 
+        self.pointcloud_renderer = None
+
     def run(self):
         self._init_window()
         self._init_imgui()
+        self._init_renderers()
 
         while not glfw.window_should_close(self.window):
             glfw.poll_events()
             self.imgui_glfw.process_inputs()
 
-            fb_width, fb_height = glfw.get_framebuffer_size(self.window)
-            self._render(fb_width, fb_height)
+            self._render()
 
         self._shutdown()
 
-    def _render(self, fb_width, fb_height):
+    def _render(self):
+        fb_width, fb_height = glfw.get_framebuffer_size(self.window)
         win_width, win_height = glfw.get_window_size(self.window)
         if win_width == 0 or win_height == 0:
             return
@@ -42,6 +48,26 @@ class Visualizer:
         )
 
         self.ctx.clear(0.3, 0.3, 0.3)
+
+        # create a random array of shape (N, 3) and send them to renderer
+        # points = np.random.rand(100, 3) * 5
+        p_range = (-5.0, 5.0)
+        points = []
+        for i in range(1000):
+            points.append(
+                (
+                    np.random.uniform(*p_range),
+                    np.random.uniform(*p_range),
+                    np.random.uniform(*p_range),
+                )
+            )
+        points = np.array(points)
+
+        self.pointcloud_renderer.update_points(points)
+        projection = MatrixUtils.perspective_projection(45.0, 16 / 9, 0.1, 100.0)
+        view = MatrixUtils.look_at(eye=[0, 0, 5], target=[0, 0, 0], up=[0, 1, 0])
+        mvp = MatrixUtils.create_mvp(projection, view)
+        self.pointcloud_renderer.render(mvp, pointsize=2.0)
 
         imgui.new_frame()
         self._render_ui()
@@ -84,9 +110,14 @@ class Visualizer:
         glfw.set_framebuffer_size_callback(self.window, self._on_resize)
 
         self.ctx = moderngl.create_context()
+        self.ctx.enable(moderngl.DEPTH_TEST)
+        self.ctx.enable(moderngl.PROGRAM_POINT_SIZE)
 
-    def _on_resize(self, window, fb_width, fb_height):
-        self._render(fb_width, fb_height)
+    def _init_renderers(self):
+        self.pointcloud_renderer = PointCloudRenderer(self.ctx)
+
+    def _on_resize(self, window, width, height):
+        self._render()
 
     def _shutdown(self):
         glfw.terminate()

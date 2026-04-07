@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class MatrixUtils:
     """
     Utility class for generating Model-View-Projection matrices.
@@ -15,8 +16,9 @@ class MatrixUtils:
         return v / norm
 
     @staticmethod
-    def perspective_projection(fov_y_degrees: float, aspect_ratio: float, 
-                               near: float, far: float) -> np.ndarray:
+    def perspective_projection(
+        fov_y_degrees: float, aspect_ratio: float, near: float, far: float
+    ) -> np.ndarray:
         """
         Create a perspective projection matrix.
         """
@@ -31,9 +33,9 @@ class MatrixUtils:
         return matrix
 
     @staticmethod
-    def orthographic_projection(left: float, right: float, 
-                                bottom: float, top: float, 
-                                near: float, far: float) -> np.ndarray:
+    def orthographic_projection(
+        left: float, right: float, bottom: float, top: float, near: float, far: float
+    ) -> np.ndarray:
         """
         Create an orthographic projection matrix.
         """
@@ -59,7 +61,9 @@ class MatrixUtils:
         # Normalize axes manually
         z_axis = MatrixUtils._normalize(eye - target)
         x_axis = MatrixUtils._normalize(np.cross(up, z_axis))
-        y_axis = np.cross(z_axis, x_axis)  # Already normalized if x and z are orthogonal
+        y_axis = np.cross(
+            z_axis, x_axis
+        )  # Already normalized if x and z are orthogonal
 
         matrix = np.eye(4, dtype=np.float32)
         matrix[0, :3] = x_axis
@@ -125,8 +129,9 @@ class MatrixUtils:
         return matrix
 
     @staticmethod
-    def create_mvp(projection: np.ndarray, view: np.ndarray, 
-                   model: np.ndarray = None) -> np.ndarray:
+    def create_mvp(
+        projection: np.ndarray, view: np.ndarray, model: np.ndarray = None
+    ) -> np.ndarray:
         """
         Combine projection, view, and optional model matrices.
         """

@@ -9,8 +9,10 @@ VERTEX_SHADER = """
 uniform mat4 mvp;
 uniform float pointsize;
 in vec3 in_vertex;
+out float out_height;
 
 void main() {
+    out_height = in_vertex.z;
     gl_Position = mvp * vec4(in_vertex, 1.0);
     gl_PointSize = pointsize;
 }
@@ -20,10 +22,30 @@ void main() {
 FRAGMENT_SHADER = """
 
 #version 330
-uniform vec4 color;
+uniform vec4 color_underground;
+uniform vec4 color_ground;
+uniform vec4 color_min_height;
+uniform vec4 color_max_height;
+uniform float max_height;
+uniform float ground_value;
+in float out_height;
 out vec4 f_color;
 void main() {
-    f_color = color;
+    vec4 final_color;
+    if (out_height < ground_value - 0.05) {
+        final_color = color_underground;
+    } else if (out_height <= ground_value + 0.05) {
+        final_color = color_ground;
+    } else {
+        float relative_height = out_height - ground_value;
+        float max_relative = max_height - ground_value;
+
+        float intensity = log(relative_height + 1.0) / log(max_relative + 1.0);
+        intensity = clamp(intensity, 0.0, 1.0);
+
+        final_color = mix(color_min_height, color_max_height, intensity);
+    }
+    f_color = final_color;
 }
 
 """
@@ -59,13 +81,31 @@ class PointCloudRenderer:
         self.vbo.write(points.tobytes())
         self.num_points = points.shape[0]
 
-    def render(self, mvp, pointsize=2.0, color=(1.0, 1.0, 1.0, 1.0)):
+    def render(
+        self,
+        mvp,
+        pointsize=2.0,
+        max_height=100,
+        ground_value=0.0,
+        color_underground=(0.3, 0.15, 0.0, 1.0),
+        color_ground=(0.0, 0.5, 0.2, 1.0),
+        color_min_height=(0.0, 0.8, 0.8, 1.0),
+        color_max_height=(1.0, 1.0, 1.0, 1.0),
+    ):
         self._validate_mvp(mvp)
 
-        # render the updated points on the opengl surface
-        self.program["mvp"].write(mvp.astype(np.float32).tobytes())
+        # NumPy produces row-major matrices, while OpenGL uniforms expect
+        # column-major data for mat4 uploads.
+        self.program["mvp"].write(
+            np.ascontiguousarray(mvp.T, dtype=np.float32).tobytes()
+        )
         self.program["pointsize"].value = pointsize
-        self.program["color"].value = color
+        self.program["max_height"].value = max_height
+        self.program["ground_value"].value = ground_value
+        self.program["color_underground"].value = color_underground
+        self.program["color_ground"].value = color_ground
+        self.program["color_min_height"].value = color_min_height
+        self.program["color_max_height"].value = color_max_height
         self.vao.render(moderngl.POINTS, vertices=self.num_points)
 
     def _validate_mvp(self, mvp: np.ndarray):

@@ -1,4 +1,4 @@
-# Visin — Real-time 3D Point Cloud Visualizer
+# Visin Real-time 3D Point Cloud Visualizer
 
 Visin is a desktop application for visualizing 3D point cloud data (e.g., from LiDAR scans). It renders point clouds with height-based coloring and provides interactive camera controls for exploration.
 
@@ -6,12 +6,12 @@ Visin is a desktop application for visualizing 3D point cloud data (e.g., from L
 
 ## Features
 
-- **Interactive 3D viewport** — orbit (left-drag), pan (right-drag), zoom (scroll), WASD fly-through
-- **Height-based coloring** — underground points in brown, ground in green, above-ground in a cyan-to-white gradient
+- **Interactive 3D viewport** - orbit (left-drag), pan (right-drag), zoom (scroll), WASD fly-through
+- **Height-based coloring** - underground points in brown, ground in green, above-ground in a cyan-to-white gradient
 - **Perspective & orthographic** projection modes (toggle with `P` or the UI checkbox)
 - **Supported formats:** PCD, PLY, XYZ, CSV, ASC, TXT, PTS
 - **Dear ImGui UI panel** with point size slider and point cloud file loader
-- **Batch loading** — select multiple files to merge their point clouds
+- **Batch loading** - select multiple files to merge their point clouds
 
 ## Requirements
 
@@ -25,8 +25,8 @@ pip install -r requirements.txt
 ```
 
 Optional dependencies:
-- `pypcd4` — PCD file support
-- `plyfile` — PLY file support
+- `pypcd4` - PCD file support
+- `plyfile` - PLY file support
 
 ## Usage
 

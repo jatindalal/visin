@@ -1,12 +1,12 @@
 import glfw
 import moderngl
 import numpy as np
-import pandas as pd
-from imgui_bundle import imgui
+from imgui_bundle import imgui, portable_file_dialogs
 from imgui_bundle.python_backends.glfw_backend import GlfwRenderer
-from pypcd4.pypcd4 import PointCloud
 
 from visin.core.camera import Camera, CameraController
+from visin.core.pointcloud_io import PointCloudData, PointCloudReader
+from visin.render.lines_renderer import LinesRenderer
 from visin.render.pointcloud_renderer import PointCloudRenderer
 
 
@@ -17,6 +17,7 @@ class InputStateMachine:
 
         self.pointsize = 2.0
         self.use_orthographic_projection = False
+        self.pointcloud_loaded = False
 
     def on_key(self, key, action):
         if action == glfw.RELEASE:
@@ -118,7 +119,9 @@ class Visualizer:
         self.last_time = current_time
 
         self._update_camera(delta_time)
-        self._render_scene()
+        self._render_center_marker()
+        if self.input_state.pointcloud_loaded:
+            self._render_scene()
 
         imgui.new_frame()
         self._render_ui()
@@ -127,6 +130,10 @@ class Visualizer:
         self.imgui_glfw.render(imgui.get_draw_data())
 
         glfw.swap_buffers(self.window)
+
+    def _render_center_marker(self):
+        mvp = self.camera.get_mvp()
+        self.line_renderer.render(mvp)
 
     def _render_ui(self):
         imgui.begin("PointCloud Viewer")
@@ -140,6 +147,27 @@ class Visualizer:
         )
         if clicked:
             self.camera.toggle_projection()
+
+        if imgui.button("Load Pointcloud", None):
+            # Create and show open file dialog
+            files = (
+                portable_file_dialogs
+                    .open_file("Select file", options=portable_file_dialogs.opt.multiselect)
+                    .result()
+            )
+            if files:
+                print(files)
+                combined_points = None
+                for file_path in files:
+                    pointcloud = PointCloudReader.load(file_path)
+                    if combined_points is None:
+                        combined_points = pointcloud.points
+                    else:
+                        combined_points = np.append(combined_points, pointcloud.points, axis=0)
+
+                assert type(combined_points) is np.ndarray
+                self.pointcloud_renderer.update_points(combined_points)
+                self.input_state.pointcloud_loaded = True
 
         imgui.end()
 
@@ -201,9 +229,21 @@ class Visualizer:
 
     def _init_renderers(self):
         self.pointcloud_renderer = PointCloudRenderer(self.ctx)
-
-        points = self._load_points("/Users/jd/Downloads/samp24-utm-ground.pcd")
-        self.pointcloud_renderer.update_points(points)
+        self.line_renderer = LinesRenderer(self.ctx)
+        lines = [
+            [[0, -1, 0], [0, 1, 0]],
+            [[-1, 0, 0], [1, 0, 0]],
+            [[0, 0, -1], [0, 0, 1]],
+        ]
+        colors = [
+            [1.0, 0.2, 0.2, 1.0],  # red
+            [1.0, 0.6, 0.0, 1.0],  # orange
+            [1.0, 1.0, 0.0, 1.0],  # yellow
+            [0.2, 1.0, 0.2, 1.0],  # green
+            [0.0, 0.8, 1.0, 1.0],  # cyan
+            [0.4, 0.4, 1.0, 1.0],  # blue
+        ]
+        self.line_renderer.update_lines(np.array(lines), np.array(colors))
 
     def _on_resize(self, window, width, height):
         self._render()
@@ -309,12 +349,7 @@ class Visualizer:
         self.camera_controller.set_interaction(interaction, xpos, ypos)
 
     def _load_points(self, path):
-        points = PointCloud.from_path(path).numpy(("x", "y", "z"))
-        finite_points = points[np.isfinite(points).all(axis=1)]
-        if finite_points.size == 0:
-            raise RuntimeError("Point cloud does not contain any finite xyz points")
-
-        return np.ascontiguousarray(finite_points, dtype=np.float32)
+        return PointCloudReader.load(path).points
 
     def _shutdown(self):
         glfw.terminate()

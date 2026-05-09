@@ -8,4 +8,5 @@ imgui-bundle>=1.5.0
 
 # Data
 numpy>=1.26.0
-
+pypcd4>=1.1.0
+plyfile>=1.1.0

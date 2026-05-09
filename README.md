@@ -1,4 +1,4 @@
-# Visin Real-time 3D Point Cloud Visualizer
+# Visin: Real-time 3D Point Cloud Visualizer
 
 Visin is a desktop application for visualizing 3D point cloud data (e.g., from LiDAR scans). It renders point clouds with height-based coloring and provides interactive camera controls for exploration.
 
